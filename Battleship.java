@@ -8,9 +8,9 @@ public class Battleship extends JFrame {
   // Constants
   public static final boolean DEBUG = true;
 
-  public static final int BOARD_ROW = 10;
-  public static final int BOARD_COL = 10;
-  public static final int CELL_SIZE = 50;
+  public static final int BOARD_ROW = 20;
+  public static final int BOARD_COL = 20;
+  public static final int CELL_SIZE = 25;
 
   // Array representing the playing grid
   private Cell cell_grid[][] = new Cell[BOARD_ROW][BOARD_COL];
@@ -33,62 +33,65 @@ public class Battleship extends JFrame {
     }
 
     // Add Ships To Random Cells
-    this.addShip(1);
     this.addShip(2);
     this.addShip(3);
+    this.addShip(4);
 
     this.setVisible(true);
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
   }
 
+  public enum Orientation { Horizontal, Vertical }
+
   public void addShip(int size) {
 
-    // Select a random int between 1 and 2, convert it to a boolean for later
-    // use. 0 = horizontal / false, 1 = vertical / true
-    boolean dir = ((int)(Math.random() * 2)) != 0;
+    // Select a random orientation for this ship.
+    Orientation o = Orientation.values()[(int)(Math.random() * 2)];
 
     // Select random starting points for our 'a' and 'b' coordinates.
-    int start_a = ((int)(Math.random() * (dir ? BOARD_COL : BOARD_ROW) - 1));
-    int start_b = ((int)(Math.random() * (dir ? BOARD_ROW : BOARD_COL) - 1));
+    int start_x = ((int)(Math.random() * (BOARD_COL)));
+    int start_y = ((int)(Math.random() * (BOARD_ROW)));
 
-    // Loop through the grid, if 'dir' is true AKA vertical, loop through
-    // columns first If 'dir' is false AKA horizontal, loop through rows first
-    // TY based ternary
-    for (int a = start_a; a < (dir ? BOARD_COL : BOARD_ROW); a++) {
-      for (int b = start_b; b < (dir ? BOARD_ROW : BOARD_COL); b++) {
-
-        // We need a flag the inner loop can modify in order to
-        // tell the outer loop to skip over this row / column.
-        boolean overlap = false;
-
-        // Loop over 'size' cells, verify they're empty,
-        // If just one is not, trigger the overlap flag.
+    // Loop through the grid
+    for (int x = start_x; x < BOARD_COL; x++) {
+      for (int y = start_y; y < BOARD_ROW; y++) {
+        
+        // Create a flag for the inner loop to modify
+        // in case we need skip over this cell.
+        // eg. An Overlap or OOB
+        boolean skip = false;
+        
+        // Check 'size' cells to determine if they are
+        // occupied or if we go OOB.
         for (int c = 0; c < size; c++) {
-
-          // Depending on orientation, check if a cell is occupied.
-          boolean condition = (dir) ? (cell_grid[a][b + c].isOccupied())
-                                    : (cell_grid[a + c][b].isOccupied());
-
-          if (condition) {
-            overlap = true;
-            break;
+          if (o.equals(Orientation.Vertical)) {
+            if (((x + c) >= BOARD_COL) || cell_grid[x + c][y].isOccupied()) {
+              skip = true;
+              break;
+            }
+          } else {
+            if (((y + c) >= BOARD_ROW) || cell_grid[x][y + c].isOccupied()) {
+              skip = true;
+              break;
+            }
           }
         }
 
-        // If an overlap exists, move to the next value of 'a'.
-        if (overlap)
-          continue;
+        // If we need to skip, move to the next cell
+        if (skip)
+          break;
 
-        // Otherwise, loop over the cells we checked earlier and occupy them.
+        // Everything's good to go, let's occupy
+        // the cells from earlier.
         for (int c = 0; c < size; c++) {
-
-          Cell to_occupy =
-              (dir) ? (cell_grid[a][b + c]) : (cell_grid[a + c][b]);
-
-          to_occupy.occupy();
+          if (o.equals(Orientation.Vertical)) {
+            cell_grid[x + c][y].occupy();
+          } else {
+            cell_grid[x][y + c].occupy();
+          }
         }
 
-        // Our job here is done, return.
+        // Our job here is done.
         return;
       }
     }
@@ -115,7 +118,7 @@ public class Battleship extends JFrame {
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
       if (DEBUG && this.occupied)
-        g.fillRect(0, 0, 8, 8);
+        g.fillRect(0, 0, 5, 5);
     }
 
     public void occupy() { this.occupied = true; }
