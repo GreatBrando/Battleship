@@ -49,8 +49,8 @@ public class Battleship extends JFrame {
     Orientation o = Orientation.values()[(int)(Math.random() * 2)];
 
     // Select random starting points for our 'a' and 'b' coordinates.
-    int start_x = ((int)(Math.random() * (BOARD_COL)));
-    int start_y = ((int)(Math.random() * (BOARD_ROW)));
+    int start_x = ((int)(Math.random() * (BOARD_COL - size)));
+    int start_y = ((int)(Math.random() * (BOARD_ROW - size)));
 
     // Loop through the grid
     for (int x = start_x; x < BOARD_COL; x++) {
