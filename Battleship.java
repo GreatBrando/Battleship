@@ -55,7 +55,7 @@ public class Battleship extends JFrame {
 				for ( int c = 0; c < size; c++ ) {
 
 					boolean condition = ( dir ) ? ( cell_grid[a][b+c].isOccupied() )
-												: ( cell_grid[b][a+c].isOccupied() );
+												: ( cell_grid[a+c][b].isOccupied() );
 
 					if ( condition ) {
 						overlap = true;
@@ -68,7 +68,7 @@ public class Battleship extends JFrame {
 				for ( int c = 0; c < size; c++ ) {
 					
 					Cell to_occupy = ( dir ) ? ( cell_grid[a][b+c] )
-											 : ( cell_grid[b][a+c] );
+											 : ( cell_grid[a+c][b] );
 
 					to_occupy.occupy();
 				}
