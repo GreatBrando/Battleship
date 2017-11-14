@@ -6,6 +6,8 @@ import javax.swing.*;
 public class Battleship extends JFrame {
 
 	// Constants
+	public static final boolean DEBUG = true;
+
 	public static final int BOARD_ROW = 10;
 	public static final int BOARD_COL = 10;
 	public static final int CELL_SIZE = 50;
@@ -43,17 +45,29 @@ public class Battleship extends JFrame {
 
 	public void addShip( int size ) {
 
-		boolean dir = ( ( int )( Math.random() * 2 ) ) != 0; // 0 = Horizontal, 1 = Vertical
+		// Select a random int between 1 and 2, convert it to a boolean for later use.
+		// 0 = horizontal / false, 1 = vertical / true
+		boolean dir = ( ( int )( Math.random() * 2 ) ) != 0;
+
+		// Select random starting points for our 'a' and 'b' coordinates.
 		int start_a = ( ( int )( Math.random() * ( dir ? BOARD_COL : BOARD_ROW ) - 1 ) );
 		int start_b = ( ( int )( Math.random() * ( dir ? BOARD_ROW : BOARD_COL ) - 1 ) );
-
+		
+		// Loop through the grid, if 'dir' is true AKA vertical, loop through columns first
+		// If 'dir' is false AKA horizontal, loop through rows first
+		// TY based ternary
 		for ( int a = start_a; a < ( dir ? BOARD_COL : BOARD_ROW ); a++ )	{
 			for (int b = start_b; b < ( dir ? BOARD_ROW : BOARD_COL ); b++ ) {
-
+				
+				// We need a flag the inner loop can modify in order to
+				// tell the outer loop to skip over this row / column.
 				boolean overlap = false;
-
+				
+				// Loop over 'size' cells, verify they're empty, 
+				// If just one is not, trigger the overlap flag.
 				for ( int c = 0; c < size; c++ ) {
 
+					// Depending on orientation, check if a cell is occupied.
 					boolean condition = ( dir ) ? ( cell_grid[a][b+c].isOccupied() )
 												: ( cell_grid[a+c][b].isOccupied() );
 
@@ -62,9 +76,11 @@ public class Battleship extends JFrame {
 						break;
 					}
 				}
-
+				
+				// If an overlap exists, move to the next value of 'a'.
 				if ( overlap ) continue;
 
+				// Otherwise, loop over the cells we checked earlier and occupy them.
 				for ( int c = 0; c < size; c++ ) {
 					
 					Cell to_occupy = ( dir ) ? ( cell_grid[a][b+c] )
@@ -72,7 +88,8 @@ public class Battleship extends JFrame {
 
 					to_occupy.occupy();
 				}
-
+				
+				// Our job here is done, return.
 				return;
 			}
 		}
@@ -94,10 +111,11 @@ public class Battleship extends JFrame {
 			this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		}
 		
-		// Visual Debugging
+		// DEBUG - Show Which Cells Are Occupied
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
-			g.drawString( this.occupied ? "O" : "X", 10, 20);
+			if ( DEBUG && this.occupied )
+				g.fillRect( 0, 0, 8, 8 );
 		}
 
 		public void occupy() { this.occupied = true; }
