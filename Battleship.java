@@ -1,13 +1,11 @@
-
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import java.util.*;
 
 public class Battleship extends JFrame {
 
   // Constants
-  public static final boolean DEBUG = true;
-
   public static final int BOARD_ROW = 7;
   public static final int BOARD_COL = 7;
 
@@ -15,18 +13,12 @@ public class Battleship extends JFrame {
   private Cell cell_grid[][] = new Cell[BOARD_ROW][BOARD_COL];
 
   private JLabel attempt_lbl;
-  
+  private int attempt_num = 0;
 
-  
-  // Variables 
-  int a = 1;
-  int b = 2;
-  int c = 3;
-  
-  
-  int attempts = 0;
-  int hits = 0;
-  
+  private Ship ship_one = new Ship();
+  private Ship ship_two = new Ship();
+  private Ship ship_three = new Ship();
+
   public Battleship() {
 
     setTitle("Battleship");
@@ -44,7 +36,7 @@ public class Battleship extends JFrame {
     gbc.anchor = GridBagConstraints.PAGE_START;
     add(cell_panel, gbc);
 
-    attempt_lbl= new JLabel("Attempts: " +attempts);
+    attempt_lbl = new JLabel("Attempts: " + attempt_num);
     gbc.gridx = 0;
     gbc.gridy = 1;
     gbc.anchor = GridBagConstraints.PAGE_END;
@@ -60,9 +52,9 @@ public class Battleship extends JFrame {
     }
 
     // Add Ships To Random Cells
-    addShip(a);
-    addShip(b);
-    addShip(c);
+    ship_one.cells = addShip(1);
+    ship_two.cells = addShip(2);
+    ship_three.cells = addShip(3);
 
     setMinimumSize(new Dimension(500, 500));
 
@@ -73,7 +65,9 @@ public class Battleship extends JFrame {
 
   public enum Orientation { Horizontal, Vertical }
 
-  public void addShip(int size) {
+  public Cell[] addShip(int size) {
+
+    Cell[] result = new Cell[size];
 
     // Select a random orientation for ship.
     Orientation o = Orientation.values()[(int)(Math.random() * 2)];
@@ -95,14 +89,12 @@ public class Battleship extends JFrame {
         // occupied or if we go OOB.
         for (int c = 0; c < size; c++) {
           if (o.equals(Orientation.Vertical)) {
-            if (((x + c) >= BOARD_COL) ||
-                cell_grid[x + c][y].state.equals(Cell.State.Occupied)) {
+            if (((x + c) >= BOARD_COL) || cell_grid[x + c][y].isOccupied) {
               skip = true;
               break;
             }
           } else {
-            if (((y + c) >= BOARD_ROW) ||
-                cell_grid[x][y + c].state.equals(Cell.State.Occupied)) {
+            if (((y + c) >= BOARD_ROW) || cell_grid[x][y + c].isOccupied) {
               skip = true;
               break;
             }
@@ -117,16 +109,27 @@ public class Battleship extends JFrame {
         // the cells from earlier.
         for (int c = 0; c < size; c++) {
           if (o.equals(Orientation.Vertical)) {
-            cell_grid[x + c][y].setState(Cell.State.Occupied);
+            Cell cell = cell_grid[x + c][y];
+            cell.isOccupied = true;
+            result[c] = cell;
           } else {
-            cell_grid[x][y + c].setState(Cell.State.Occupied);
+            Cell cell = cell_grid[x][y + c];
+            cell.isOccupied = true;
+            result[c] = cell;
           }
         }
 
         // Our job here is done.
-        return;
+        return result;
       }
     }
+
+    return result;
+  }
+
+  public static class Ship {
+    public int times_hit;
+    public Cell[] cells;
   }
 
   public static class Cell extends JPanel {
@@ -137,50 +140,23 @@ public class Battleship extends JFrame {
     public static final Color BG_KILLED = Color.GREEN;
     public static final Color BG_MISS = Color.RED;
 
-    public static enum State { Normal, Occupied, Hit, Killed, Missed }
-
-    public State state = State.Normal;
+    public boolean isOccupied = false;
+    public boolean isHit = false;
+    public boolean isKilled = false;
 
     public Cell() {
       setOpaque(true);
       setBackground(BG_NORMAL);
       setBorder(BorderFactory.createLineBorder(Color.BLACK));
-      setPreferredSize(new Dimension(25, 25));
-    }
-
-    public void setState(State s) {
-
-      state = s;
-
-      switch (s) {
-      case Hit:
-        setBackground(BG_HIT);
-        break;
-
-      case Killed:
-        setBackground(BG_KILLED);
-        break;
-
-      case Missed:
-        setBackground(BG_MISS);
-        break;
-
-      case Normal:
-        setBackground(BG_NORMAL);
-        break;
-
-      case Occupied:
-        setBackground(BG_NORMAL);
-        break;
-      }
     }
 
     // DEBUG - Show Which Cells Are Occupied
     @Override
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
-      if (state.equals(State.Occupied))
-        g.fillRect(0, 0, 5, 5);
+      if (isOccupied) {
+        g.fillRect(0, 0, 10, 10);
+      }
     }
   }
 
@@ -192,33 +168,65 @@ public class Battleship extends JFrame {
     public Listener(int row, int col) { cell = cell_grid[row][col]; }
 
     public void mouseClicked(MouseEvent e) {
-      
-      if (cell.state.equals(Cell.State.Hit) || cell.state.equals(Cell.State.Killed) || cell.state.equals(Cell.State.Missed)){
-            return;
+
+      if (cell.isHit || cell.isKilled) {
+        return;
       }
-      
-      if (cell.state.equals(Cell.State.Occupied)) {
-        cell.setState(Cell.State.Hit);
-        hits++;
+
+      attempt_num++;
+      attempt_lbl.setText("Attempts: " + attempt_num);
+
+      cell.isHit = true;
+      cell.setBackground(cell.isOccupied ? Cell.BG_HIT : Cell.BG_MISS);
+
+      for (Cell c : ship_one.cells) {
+        if (c == cell) {
+          ship_one.times_hit++;
+          break;
+        }
       }
-      else {
-    	  cell.setState(cell.state.Missed);
+
+      if (ship_one.times_hit == 1)
+        for (Cell c : ship_one.cells)
+          c.setBackground(Cell.BG_KILLED);
+
+      for (Cell c : ship_two.cells) {
+        if (c == cell) {
+          ship_two.times_hit++;
+          break;
+        }
       }
-      
-      attempts++;
-      attempt_lbl.setText("Attempts: " +attempts);
+
+      if (ship_two.times_hit == 2)
+        for (Cell c : ship_two.cells)
+          c.setBackground(Cell.BG_KILLED);
+
+      for (Cell c : ship_three.cells) {
+        if (c == cell) {
+          ship_three.times_hit++;
+          break;
+        }
+      }
+
+      if (ship_three.times_hit == 3)
+        for (Cell c : ship_three.cells)
+          c.setBackground(Cell.BG_KILLED);
     }
 
     public void mouseEntered(MouseEvent e) {
-      if (cell.state.equals(Cell.State.Hit) || cell.state.equals(Cell.State.Killed) || cell.state.equals(Cell.State.Missed))
+
+      if (cell.isHit) {
         return;
+      }
 
       cell.setBackground(Cell.BG_HOVER);
     }
 
     public void mouseExited(MouseEvent e) {
-      if (cell.state.equals(Cell.State.Hit) || cell.state.equals(Cell.State.Killed)|| cell.state.equals(Cell.State.Missed) )
+
+      if (cell.isHit) {
         return;
+      }
 
       cell.setBackground(Cell.BG_NORMAL);
     }
@@ -227,8 +235,5 @@ public class Battleship extends JFrame {
     public void mouseReleased(MouseEvent e) {}
   }
 
-  public static void main(String[] args) {
-  
-    new Battleship();
-  }
+  public static void main(String[] args) { new Battleship(); }
 }
